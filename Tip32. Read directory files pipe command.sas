@@ -1,0 +1,32 @@
+﻿%let dir=\temp;
+%let mask=ALT*.log;
+%let sep=\;
+filename dir pipe "dir /b/s ""&dir.&sep.&mask"" ";
+data dir;
+ infile dir truncover;
+ input file $80.;
+ date=input(scan(file,-5,'.'),?? YYMMDD10.);
+ if date> today()-30;
+run;
+proc print;
+run;
+
+%macro readone(file,date);
+ data thislog;
+ infile "&file" truncover;
+ date=&date;
+ format date date.;
+ input line $250.;
+ run;
+ proc append base=_data1.altlogs force ;
+ run;
+%mend;
+filename code temp;
+data _NULL_;
+ set dir;
+ file code;
+ put'%readone(' file ',' date ');';
+ run;
+ data _null_; infile code; input; list; run;
+ %inc code;
+
